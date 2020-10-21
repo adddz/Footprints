@@ -63,6 +63,7 @@ class CaptureAttributionDataMiddleware
         $attributionData['updated_at'] = date('Y-m-d H:i:s');
 
         $job = new TrackVisit($attributionData, $cookieToken);
+
         if (config('footprints.async') == true) {
             dispatch($job);
         } else {
@@ -239,9 +240,19 @@ class CaptureAttributionDataMiddleware
         $blacklist = (array)config('footprints.landing_page_blacklist');
 
         if ($landing_page) {
-            $k = array_search($landing_page, $blacklist);
+            $skip = false;
 
-            return $k === false ? false : true;
+            foreach ($blacklist as $blacklisted) {
+                $result = null;
+                $match = preg_match("#" . $blacklisted . "#", $landing_page, $result);
+
+                if ($match == 1) {
+                    $skip = true;
+                    break;
+                }
+            }
+
+            return $skip;
         } else {
             return $blacklist;
         }
